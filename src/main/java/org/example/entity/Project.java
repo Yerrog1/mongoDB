@@ -1,71 +1,30 @@
 package org.example.entity;
 
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.With;
+import org.bson.types.ObjectId;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@With
 public class Project {
-    private final static String COLLECTION_NAME = "projects";
-    private String id;
+    public final static String COLLECTION_NAME = "projects";
+    private ObjectId id;
     private String name;
     private String description;
     //N:M
-    private List<Member> members;
+    private Set<ObjectId> members;
     //1:N
-    private List<Task> tasks;
+    private Set<ObjectId> tasks;
     //1:N
-    private Member owner;
+    private ObjectId owner;
 
-    public Project() {
-    }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Project setName(String name) {
-        this.name = name;
-        return this;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Project setDescription(String description) {
-        this.description = description;
-        return this;
-    }
-
-    public List<Member> getMembers() {
-        return members;
-    }
-
-    public Project setMembers(List<Member> members) {
-        this.members = members;
-        return this;
-    }
-
-    public List<Task> getTasks() {
-        return tasks;
-    }
-
-    public Project setTasks(List<Task> tasks) {
-        this.tasks = tasks;
-        return this;
-    }
-
-    public Member getOwner() {
-        return owner;
-    }
-
-    public Project setOwner(Member owner) {
-        this.owner = owner;
-        return this;
-    }
-    public static String getCollectionName() {
-        return COLLECTION_NAME;
-    }
 }
