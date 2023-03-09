@@ -1,10 +1,11 @@
 package org.example;
 
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.*;
+import org.bson.BsonDocument;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.example.entity.Member;
@@ -15,16 +16,25 @@ import org.example.generator.ProjectGenerator;
 import org.example.generator.TaskGenerator;
 
 import javax.xml.crypto.Data;
+import java.time.LocalDateTime;
 import java.util.*;
+
+import static com.mongodb.client.model.Accumulators.first;
+import static com.mongodb.client.model.Accumulators.sum;
+import static com.mongodb.client.model.Aggregates.*;
 
 public class Main {
     private static final MongoDatabase db = DatabaseSingleton.getInstance();
     private static final MemberGenerator memberGenerator = new MemberGenerator();
     private static final ProjectGenerator projectGenerator = new ProjectGenerator();
     private static final TaskGenerator taskGenerator = new TaskGenerator();
+    private static String idPersona;
+    private static String idProyecto;
+    private static String idTarea;
 
     public static void main(String[] args) {
-        createCollections();
+        //createCollections();
+        consultas();
     }
 
     public static void createCollections() {
@@ -83,7 +93,7 @@ public class Main {
         }).toList();
 
         List<Project> projects2 = projects;
-        members = members.stream().map(member -> {
+        members = members.stream().filter(member -> member.getAssignedTask() == null).map(member -> {
             if (member.getProjects().size() != 0) {
                 var random = (int) (Math.random() * member.getProjects().size());
                 Member projectMember = member;
@@ -119,66 +129,156 @@ public class Main {
         List<Member> members;
         List<Project> projects;
         List<Task> tasks;
-        //8 operaciones de consulta empleando filtros y proyecciones.
-
-        //Buscar todos los miembros con el nombre "Alice":
-        Bson filter = Filters.eq("name", "Alice");
+        ObjectId taskId = new ObjectId("6409906aa821b0309efcce05");
+        //6 operaciones de consulta empleando filtros y proyecciones.
+        System.out.println("========================================");
+        //Buscar todos los miembros con el nombre "Teresia Veum":
+        Bson filter = Filters.eq("name", "Teresia Veum");
         members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros con el nombre Alice: " + members);
-
+        System.out.println("Miembros con el nombre Teresia Veum  : ");
+        for (Member member : members) {
+            System.out.println(member.getId() + " " + member.getName());
+        }
+        System.out.println("========================================");
         //Buscar todos los proyectos propiedad de un miembro con un ID determinado:
-        ObjectId memberId = new ObjectId("123456789012345678901234");
+        ObjectId memberId = new ObjectId("6409906aa821b0309efccd3d");
         filter = Filters.eq("owner", memberId);
         projects = projectCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Proyectos propiedad de un miembro con ID "+memberId+": " + projects);
+        System.out.println("Proyectos propiedad de un miembro con ID " + memberId + ": ");
+        for (Project project : projects) {
+            System.out.println(project.getId() + " " + project.getName());
+        }
+        System.out.println("========================================");
 
-        //Buscar todas las tareas asignadas a un miembro con un ID determinado:
-        memberId = new ObjectId("123456789012345678901234");
-        filter = Filters.eq("owner", memberId);
         List<Task> result = taskCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Tarea asignada a un miembro con ID "+memberId+": " + result);
 
         //Buscar todos los miembros que participan en un proyecto con un ID determinado:
-        ObjectId projectId = new ObjectId("123456789012345678901234");
+        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
         filter = Filters.in("projects", projectId);
         members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros que participan en un proyecto con ID "+projectId+": " + members);
-
-        //Buscar todas las tareas asociadas a un proyecto con un ID determinado, con proyección para incluir solo el nombre de la tarea:
-        projectId = new ObjectId("123456789012345678901234");
+        System.out.println("Miembros que participan en un proyecto con ID " + projectId + ": ");
+        for (Member member : members) {
+            System.out.println(member.getId() + " " + member.getName());
+        }
+        System.out.println("========================================");
+        //Buscar todas las tareas asociadas a un proyecto con un ID determinado:
+        projectId = new ObjectId("6409906aa821b0309efccda1");
         filter = Filters.eq("project", projectId);
         Bson projection = Projections.include("name");
         tasks = taskCollection.find(filter).projection(projection).into(new ArrayList<>());
-        System.out.println("Tareas asociadas a un proyecto con ID "+projectId+": " + tasks);
-
-        //Buscar todos los proyectos que contienen al menos una tarea, con proyección para incluir solo el nombre del proyecto:
+        System.out.println("Tareas asociadas a un proyecto con ID " + projectId + ": ");
+        for (Task task : tasks) {
+            System.out.println(task.getId() + " " + task.getName());
+        }
+        System.out.println("========================================");
+        //Buscar todos los proyectos que contienen al menos una tarea:
         filter = Filters.exists("tasks");
         projection = Projections.include("name");
         projects = projectCollection.find(filter).projection(projection).into(new ArrayList<>());
-        System.out.println("Proyectos que contienen al menos una tarea: " + projects);
-
+        System.out.println("Proyectos que contienen al menos una tarea: ");
+        for (Project project : projects) {
+            System.out.println(project.getId() + " " + project.getName());
+        }
+        System.out.println("========================================");
         //Buscar todos los miembros que tienen una tarea asignada:
         filter = Filters.exists("assignedTask");
         members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros que tienen una tarea asignada: " + members);
-
-        //Buscar todos los miembros con una biografía que contiene la palabra "programador":
-        filter = Filters.regex("biography", "programador");
+        System.out.println("Miembros que tienen una tarea asignada: ");
+        for (Member member : members) {
+            System.out.println(member.getId() + " " + member.getName());
+        }
+        System.out.println("========================================");
+        //Buscar todos los miembros con una biografía que contiene la palabra "magni":
+        filter = Filters.regex("biography", "magni");
         members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros con una biografía que contiene la palabra \"programador\": " + members);
-
+        System.out.println("Miembros con una biografía que contiene la palabra \"magni\": ");
+        for (Member member : members) {
+            System.out.println(member.getId() + " " + member.getName());
+        }
+        System.out.println("========================================");
+        System.out.println("========================================");
         //6 operaciones de actualización.
+        //Actualizar el nombre de un proyecto:
+        System.out.println("Actualizar el nombre de un proyecto:");
+        projectCollection.updateOne(
+                Filters.eq("_id", projectId),
+                Updates.set("name", "Nuevo nombre del proyecto actualizado " + LocalDateTime.now().toString())
+        );
+        //Agregar un miembro a un proyecto existente:
+        System.out.println("Agregar un miembro a un proyecto existente:");
+        projectCollection.updateOne(
+                Filters.eq("_id", projectId),
+                Updates.addToSet("members", memberId)
+        );
+
+        memberCollection.updateOne(
+                Filters.eq("_id", memberId),
+                Updates.addToSet("projects", projectId)
+        );
+        //Eliminar una tarea de un proyecto y desasignarla de su propietario:
+        System.out.println("Eliminar una tarea de un proyecto y desasignarla de su propietario:");
+        taskCollection.updateOne(
+                Filters.eq("_id", taskId),
+                Updates.set("project", null)
+        );
 
 
+        projectCollection.updateOne(
+                Filters.eq("_id", projectId),
+                Updates.pull("tasks", taskId)
+        );
+        filter = Filters.eq("_id", taskId);
+        result = taskCollection.find(filter).into(new ArrayList<>());
+        Object ownerId = result.get(0).getOwner();
+        memberCollection.updateOne(
+                Filters.eq("_id", ownerId),
+                Updates.set("assignedTask", null)
+        );
+        //Agregar una tarea a un proyecto:
+        System.out.println("Agregar una tarea a un proyecto:");
+        Task newTask = new Task(new ObjectId(), "Nombre de la tarea", "Descripción de la tarea creada " + LocalDateTime.now().toString(), null, projectId);
+
+        taskCollection.insertOne(newTask);
+
+        projectCollection.updateOne(
+                Filters.eq("_id", projectId),
+                Updates.addToSet("tasks", newTask.getId())
+        );
 
 
+        //Agregar un nuevo miembro:
+        System.out.println("Agregar un nuevo miembro:");
+        Member newMember = new Member(new ObjectId(), "Nuevo miembro", "Biografía del nuevo miembro creado " + LocalDateTime.now().toString(), "correo@nuevomiembro.com", new HashSet<>(), null);
 
+        memberCollection.insertOne(newMember);
 
+        List<Project> memberProjects = projectCollection.find(
+                Filters.in("_id", newMember.getProjects())
+        ).into(new ArrayList<>());
 
-        //4 operaciones de agregaciones pipeline de las cuales al menos 3 deben realizar operaciones de agrupamiento empleando funciones de agregado.
-
-
-
+        //Actualizar la biografía de un miembro:
+        System.out.println("Actualizar la biografía de un miembro:");
+        memberCollection.updateOne(
+                Filters.eq("_id", memberId),
+                Updates.set("biography", "Nueva biografía del miembro actualizada el " + LocalDateTime.now().toString())
+        );
+        //3 operaciones de agregaciones pipeline de las cuales al menos 3 deben realizar operaciones de agrupamiento empleando funciones de agregado.
+        System.out.println("========================================");
+        System.out.println("========================================");
+        //Contar el número de miembros que hay en cada proyecto:
+        System.out.println("Obtiene los nombres de los proyectos del primer miembro:");
+        db.getCollection("members")
+                .aggregate(List.of(
+                        limit(1), // Solo el primer miembro
+                        lookup("projects", "projects", "_id", "mp"), // consulta col `projects`,campo local `projects` se corresponde con el `_id` remoto, lo pilla como `mp`
+                        unwind("$mp"), // "Saca" el MP cada proyecto a un documento
+                        project(BsonDocument.parse("{mp: {name: 1}}")) // Saco solo el nombre del memberProject (el nombre del proyecto)
+                )).forEach(p -> {
+                    var mp = p.get("mp"); // Pillo el "mp"
+                    System.out.println(mp); // imprimo
+                });
+        System.out.println("========================================");
+        //
 
 
         //Exportar cada una de las colecciones a un fichero en formato .json.
