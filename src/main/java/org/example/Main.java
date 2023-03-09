@@ -16,6 +16,9 @@ import org.example.generator.ProjectGenerator;
 import org.example.generator.TaskGenerator;
 
 import javax.xml.crypto.Data;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -278,9 +281,58 @@ public class Main {
                     System.out.println(mp); // imprimo
                 });
         System.out.println("========================================");
-        //
-
+        //Obtener el número de miembros que hay en cada proyecto:
+        System.out.println("Obtener el número de miembros que hay en cada proyecto:");
+        db.getCollection("projects")
+                .aggregate(List.of(
+                        lookup("members", "members", "_id", "members"), // consulta col `members`,campo local `members` se corresponde con el `_id` remoto, lo pilla como `members`
+                        unwind("$members"), // "Saca" el member cada miembro a un documento
+                        group("$name", Accumulators.sum("members", 1)) // Agrupo por nombre de proyecto y cuento los miembros
+                )).forEach(p -> {
+                    var name = p.get("_id"); // Pillo el "_id"
+                    var memberss = p.get("members"); // Pillo el "members"
+                    System.out.println(name + " " + memberss); // imprimo
+                });
+        System.out.println("========================================");
+        //Obtener el número de tareas que hay en cada proyecto:
+        System.out.println("Obtener el número de tareas que hay en cada proyecto:");
+        db.getCollection("projects")
+                .aggregate(List.of(
+                        lookup("tasks", "tasks", "_id", "tasks"), // consulta col `tasks`,campo local `tasks` se corresponde con el `_id` remoto, lo pilla como `tasks`
+                        unwind("$tasks"), // "Saca" el task cada tarea a un documento
+                        group("$name", Accumulators.sum("tasks", 1)) // Agrupo por nombre de proyecto y cuento las tareas
+                )).forEach(p -> {
+                    var name = p.get("_id"); // Pillo el "_id"
+                    var taskss = p.get("tasks"); // Pillo el "tasks"
+                    System.out.println(name + " " + taskss); // imprimo
+                });
 
         //Exportar cada una de las colecciones a un fichero en formato .json.
+        System.out.println("========================================");
+        System.out.println("========================================");
+        System.out.println("Exportar cada una de las colecciones a un fichero en formato .json.");
+        System.out.println("========================================");
+        System.out.println("========================================");
+        System.out.println("Exportando miembros...");
+        exportCollection("members");
+        System.out.println("Exportando proyectos...");
+        exportCollection("projects");
+        System.out.println("Exportando tareas...");
+        exportCollection("tasks");
+    }
+
+    private static void exportCollection(String collection) {
+
+        var col = db.getCollection(collection);
+        var cursor = col.find().iterator();
+        var json = new ArrayList<String>();
+        while (cursor.hasNext()) {
+            json.add(cursor.next().toJson());
+        }
+        try {
+            Files.write(Paths.get(collection + ".json"), json);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
