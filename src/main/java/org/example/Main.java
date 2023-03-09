@@ -31,12 +31,13 @@ public class Main {
     private static final MemberGenerator memberGenerator = new MemberGenerator();
     private static final ProjectGenerator projectGenerator = new ProjectGenerator();
     private static final TaskGenerator taskGenerator = new TaskGenerator();
+    private static String nombrePersona;
     private static String idPersona;
     private static String idProyecto;
     private static String idTarea;
 
     public static void main(String[] args) {
-        //createCollections();
+        createCollections();
         consultas();
     }
 
@@ -49,7 +50,7 @@ public class Main {
         var members = memberGenerator.generate(100);
         var projects = projectGenerator.generate(100);
         var tasks = new ArrayList<Task>();
-
+        nombrePersona = members.get(0).getName();
         List<Member> finalMembers = members;
 
 
@@ -123,6 +124,9 @@ public class Main {
         memberCollection.insertMany(members);
         projectCollection.insertMany(projects);
         taskCollection.insertMany(tasks);
+        idPersona = members.get(5).getId().toString();
+        idProyecto = projects.get(54).getId().toString();
+        idTarea = tasks.get(69).getId().toString();
     }
 
     public static void consultas() {
@@ -135,22 +139,22 @@ public class Main {
         Bson filter;
         ObjectId taskId = new ObjectId("6409906aa821b0309efcce05");
         //6 operaciones de consulta empleando filtros y proyecciones.
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta1(memberCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta2(projectCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta3(memberCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta4(taskCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta5(projectCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta6(memberCollection);
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         consulta7(memberCollection);
-        System.out.println("========================================");
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
+        System.out.println("====================================================================================================");
         //6 operaciones de actualización.
         actualizacion1(projectCollection);
         actualizacion2(projectCollection, memberCollection);
@@ -159,18 +163,18 @@ public class Main {
         actualizacion5(memberCollection, projectCollection);
         actualizacion6(memberCollection);
         //3 operaciones de agregación (mediante canalización de agregación), dos de las cuales deben incluir funciones de agregación.
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         agregacion1();
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         agregacion2();
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
         agregacion3();
         //Exportar cada una de las colecciones a un fichero en formato .json.
-        System.out.println("========================================");
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
+        System.out.println("====================================================================================================");
         System.out.println("Exportar cada una de las colecciones a un fichero en formato .json.");
-        System.out.println("========================================");
-        System.out.println("========================================");
+        System.out.println("====================================================================================================");
+        System.out.println("====================================================================================================");
         System.out.println("Exportando miembros...");
         exportCollection("members");
         System.out.println("Exportando proyectos...");
@@ -226,7 +230,7 @@ public class Main {
 
     private static void actualizacion6(MongoCollection<Member> memberCollection) {
         //Actualizar la biografía de un miembro:
-        ObjectId memberId = new ObjectId("6409906aa821b0309efccd3d");
+        ObjectId memberId = new ObjectId(idPersona);
         System.out.println("Actualizar la biografía de un miembro:");
         memberCollection.updateOne(
                 Filters.eq("_id", memberId),
@@ -248,14 +252,15 @@ public class Main {
 
     private static void actualizacion4(MongoCollection<Project> projectCollection, MongoCollection<Task> taskCollection) {
         //Agregar una tarea a un proyecto:
+        ObjectId id = new ObjectId(idProyecto);
         System.out.println("Agregar una tarea a un proyecto:");
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
-        Task newTask = new Task(new ObjectId(), "Nombre de la tarea", "Descripción de la tarea creada " + LocalDateTime.now().toString(), null, projectId);
+        Task newTask = new Task(new ObjectId(), "Nombre de la tarea", "Descripción de la tarea creada "
+                + LocalDateTime.now().toString(), null, id);
 
         taskCollection.insertOne(newTask);
 
         projectCollection.updateOne(
-                Filters.eq("_id", projectId),
+                Filters.eq("_id", id),
                 Updates.addToSet("tasks", newTask.getId())
         );
     }
@@ -263,7 +268,8 @@ public class Main {
     private static void actualizacion3(MongoCollection<Member> memberCollection, MongoCollection<Project> projectCollection, MongoCollection<Task> taskCollection, ObjectId taskId) {
         Bson filter;
         //Eliminar una tarea de un proyecto y desasignarla de su propietario:
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
+        ObjectId projectId = new ObjectId(idProyecto);
+        ObjectId taskId1 = new ObjectId(idTarea);
         System.out.println("Eliminar una tarea de un proyecto y desasignarla de su propietario:");
         taskCollection.updateOne(
                 Filters.eq("_id", taskId),
@@ -273,9 +279,9 @@ public class Main {
 
         projectCollection.updateOne(
                 Filters.eq("_id", projectId),
-                Updates.pull("tasks", taskId)
+                Updates.pull("tasks", taskId1)
         );
-        filter = Filters.eq("_id", taskId);
+        filter = Filters.eq("_id", taskId1);
         ArrayList<Task> result = taskCollection.find(filter).into(new ArrayList<>());
         Object ownerId = result.get(0).getOwner();
         memberCollection.updateOne(
@@ -286,8 +292,8 @@ public class Main {
 
     private static void actualizacion2(MongoCollection<Project> projectCollection, MongoCollection<Member> memberCollection) {
         //Agregar un miembro a un proyecto existente:
-        ObjectId memberId = new ObjectId("6409906aa821b0309efccd3d");
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
+        ObjectId projectId = new ObjectId(idProyecto);
+        ObjectId memberId = new ObjectId(idPersona);
         System.out.println("Agregar un miembro a un proyecto existente:");
         projectCollection.updateOne(
                 Filters.eq("_id", projectId),
@@ -301,7 +307,7 @@ public class Main {
 
     private static void actualizacion1(MongoCollection<Project> projectCollection) {
         //Actualizar el nombre de un proyecto:
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
+        ObjectId projectId = new ObjectId(idProyecto);
         System.out.println("Actualizar el nombre de un proyecto:");
         projectCollection.updateOne(
                 Filters.eq("_id", projectId),
@@ -346,10 +352,10 @@ public class Main {
 
 
     private static void consulta1(MongoCollection<Member> memberCollection) {
-        //Buscar todos los miembros con el nombre "Teresia Veum":
-        Bson filter = Filters.eq("name", "Teresia Veum");
+        //Buscar todos los miembros con el nombre de la primera persona:
+        Bson filter = Filters.eq("name", nombrePersona);
         List<Member> members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros con el nombre Teresia Veum  : ");
+        System.out.println("Miembros con el nombre " + nombrePersona + ": ");
         for (Member member : members) {
             System.out.println(member.getId() + " " + member.getName());
         }
@@ -357,10 +363,10 @@ public class Main {
 
     private static void consulta2(MongoCollection<Project> projectCollection) {
         //Buscar todos los proyectos propiedad de un miembro con un ID determinado:
-        ObjectId memberId = new ObjectId("6409906aa821b0309efccd3d");
+        ObjectId memberId = new ObjectId(idPersona);
         Bson filter = Filters.eq("owner", memberId);
         List<Project> projects = projectCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Proyectos propiedad de un miembro con ID " + memberId + ": ");
+        System.out.println("Proyectos propiedad de un miembro con ID " + idPersona + ": ");
         for (Project project : projects) {
             System.out.println(project.getId() + " " + project.getName());
         }
@@ -368,21 +374,22 @@ public class Main {
 
     private static void consulta3(MongoCollection<Member> memberCollection) {
         //Buscar todos los miembros que participan en un proyecto con un ID determinado:
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
+        ObjectId projectId = new ObjectId(idProyecto);
         Bson filter = Filters.in("projects", projectId);
         List<Member> members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros que participan en un proyecto con ID " + projectId + ": ");
+        System.out.println("Miembros que participan en un proyecto con ID " + idProyecto + ": ");
         for (Member member : members) {
             System.out.println(member.getId() + " " + member.getName());
         }
     }
+
     private static void consulta4(MongoCollection<Task> taskCollection) {
         //Buscar todas las tareas asociadas a un proyecto con un ID determinado:
-        ObjectId projectId = new ObjectId("6409906aa821b0309efccda1");
+        ObjectId projectId = new ObjectId(idProyecto);
         Bson filter = Filters.eq("project", projectId);
         Bson projection = Projections.include("name");
         List<Task> tasks = taskCollection.find(filter).projection(projection).into(new ArrayList<>());
-        System.out.println("Tareas asociadas a un proyecto con ID " + projectId + ": ");
+        System.out.println("Tareas asociadas a un proyecto con ID " + idProyecto + ": ");
         for (Task task : tasks) {
             System.out.println(task.getId() + " " + task.getName());
         }
