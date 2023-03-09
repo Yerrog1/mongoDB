@@ -535,3 +535,4 @@
 {"_id": {"$oid": "6409ae6c76bfb81f622c5a28"}, "description": "Descripción de la tarea creada 2023-03-09T11:01:16.660782500", "name": "Nombre de la tarea", "project": {"$oid": "6409906aa821b0309efccda1"}}
 {"_id": {"$oid": "6409ae9031f3b3398014d5bd"}, "description": "Descripción de la tarea creada 2023-03-09T11:01:52.126320200", "name": "Nombre de la tarea", "project": {"$oid": "6409906aa821b0309efccda1"}}
 {"_id": {"$oid": "6409af55249f757ff2c9ff89"}, "description": "Descripción de la tarea creada 2023-03-09T11:05:09.195654100", "name": "Nombre de la tarea", "project": {"$oid": "6409906aa821b0309efccda1"}}
+{"_id": {"$oid": "6409c468582fc24389244137"}, "description": "Descripción de la tarea creada 2023-03-09T12:35:04.965536100", "name": "Nombre de la tarea", "project": {"$oid": "6409906aa821b0309efccda1"}}

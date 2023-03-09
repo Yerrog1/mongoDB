@@ -132,16 +132,12 @@ public class Main {
         List<Member> members;
         List<Project> projects;
         List<Task> tasks;
+        Bson filter;
         ObjectId taskId = new ObjectId("6409906aa821b0309efcce05");
         //6 operaciones de consulta empleando filtros y proyecciones.
         System.out.println("========================================");
         //Buscar todos los miembros con el nombre "Teresia Veum":
-        Bson filter = Filters.eq("name", "Teresia Veum");
-        members = memberCollection.find(filter).into(new ArrayList<>());
-        System.out.println("Miembros con el nombre Teresia Veum  : ");
-        for (Member member : members) {
-            System.out.println(member.getId() + " " + member.getName());
-        }
+        consulta1(memberCollection);
         System.out.println("========================================");
         //Buscar todos los proyectos propiedad de un miembro con un ID determinado:
         ObjectId memberId = new ObjectId("6409906aa821b0309efccd3d");
@@ -319,6 +315,16 @@ public class Main {
         exportCollection("projects");
         System.out.println("Exportando tareas...");
         exportCollection("tasks");
+    }
+
+    private static void consulta1(MongoCollection<Member> memberCollection) {
+        List<Member> members;
+        Bson filter = Filters.eq("name", "Teresia Veum");
+        members = memberCollection.find(filter).into(new ArrayList<>());
+        System.out.println("Miembros con el nombre Teresia Veum  : ");
+        for (Member member : members) {
+            System.out.println(member.getId() + " " + member.getName());
+        }
     }
 
     private static void exportCollection(String collection) {
